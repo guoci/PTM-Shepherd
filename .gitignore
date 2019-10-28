@@ -686,6 +686,9 @@ gradle-app.setting
 
 # User-specific files
 
+#shepherd test results
+./test*
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 
 # Build results

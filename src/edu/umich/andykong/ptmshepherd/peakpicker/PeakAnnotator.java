@@ -12,7 +12,7 @@ public class PeakAnnotator {
 	ArrayList<Double> mod_diffs;
 	ArrayList<Integer> allowed_list;
 	String userMods = "";
-	ArrayList<String> vModNames;
+	ArrayList<String> vModNames; //privileged mods that can be matched with any mass in unimod
 	ArrayList<Double> vModMasses;
 
 	static final double C13delta = 1.003355;
@@ -114,6 +114,22 @@ public class PeakAnnotator {
 				res[0] = i;
 				return res;
 			}
+		for(int i = 0; i < vModNames.size(); i++){
+			double vPriv = v - vModMasses.get(i);
+			for(int j = 0; j < mods.size(); j++)
+				if(Math.abs(vPriv-mod_diffs.get(j)) < mod_tol) {
+					for(int k = 0; k < allowed_list.size(); k++)
+						if(allowed_list.get(k) == j) {
+							res[0] = i;
+							res[1] = j;
+							return res;
+						}
+					allowed_list.add(j);
+					res[0] = i;
+					res[1] = j;
+					return res;
+				}
+		}
 		if(debug) 
 			for(int i = 0; i < allowed_list.size(); i++) {
 				System.out.printf("%s - %.4f\n",mods.get(allowed_list.get(i)),mod_diffs.get(allowed_list.get(i)));
@@ -160,7 +176,7 @@ public class PeakAnnotator {
 
 		userMods = varMods;
 
-		if(!varMods.equals("")) {
+		if(!varMods.equals("None:0")) {
 			List<String> tMods = Arrays.asList(varMods.split(","));
 			for(int i = 0; i < tMods.size(); i++){
 				List<String> md = Arrays.asList(tMods.get(i).split(":"));
@@ -170,6 +186,9 @@ public class PeakAnnotator {
 				vModMasses.add(dMass);
 			}
 		}
+		for (int i = 0; i < vModNames.size(); i++) {
+			addMod(vModNames.get(i), vModMasses.get(i));
+		}
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("unimod_20191002.txt")));
 		String cline;
@@ -177,21 +196,18 @@ public class PeakAnnotator {
 		addMod("First isotopic peak",C13delta);
 		addMod("Second isotopic peak",2*C13delta);
 		addMod("Third isotopic peak",3*C13delta);
-		addMod("Oxidation or Hydroxylation",15.994915);
+		//addMod("Oxidation or Hydroxylation",15.994915);
 		//make isotopic peaks statically accessible
-		for(int i = 0; i < 3; i++){
+		//add user-defined mods to modification list
+        for (int i = 0; i < mods.size(); i++) {
 			allowed_list.add(i);
 		}
-		//add user-defined mods to modification list
-        for (int i = 0; i < vModNames.size(); i++) {
-            addMod(vModNames.get(i), vModMasses.get(i));
-            allowed_list.add(i);
-        };
 
 		while((cline = in.readLine())!= null) {
 			String [] sp = cline.split("\\t");
 			addMod(sp[0],Double.parseDouble(sp[1]));
 		}
+
 		in.close();
 
 		for(int i = 0; i < AAMasses.monoisotopic_masses.length; i++) {
