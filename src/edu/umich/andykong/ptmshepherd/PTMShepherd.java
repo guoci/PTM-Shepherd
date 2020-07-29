@@ -42,10 +42,18 @@ public class PTMShepherd {
 	}
 	
 	public static void parseParamFile(String fn) throws Exception {
-		File f = new File(fn);
-		if(!f.exists()) 
-			die(String.format("Parameter file %s does not exist",fn));
-		BufferedReader in = new BufferedReader(new FileReader(f));
+
+		Path path = null;
+		try {
+			path = Paths.get(fn.replaceAll("['\"]]", ""));
+		} catch (Exception e) {
+			die(String.format("Malformed parameter path string: [%s]", fn));
+		}
+		if (path == null || !Files.exists(path)) {
+			die(String.format("Parameter file does not exist: [%s]", fn));
+		}
+
+		BufferedReader in = new BufferedReader(new FileReader(path.toFile()));
 		String cline;
 		while((cline = in.readLine())!= null) {
 			int comments = cline.indexOf("//");
